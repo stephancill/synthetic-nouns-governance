@@ -15,8 +15,9 @@ import { useLogs } from '../hooks/useLogs';
 import * as R from 'ramda';
 import config, { CHAIN_ID } from '../config';
 import { useQuery } from '@apollo/client';
-import { proposalsQuery } from './subgraph';
+import { proposalsQuery, snapshotProposalsQuery } from './subgraph';
 import BigNumber from 'bignumber.js';
+import { SnapshotProposal } from '../components/Proposals';
 
 export enum Vote {
   AGAINST = 0,
@@ -158,30 +159,30 @@ const equalTitleRegex = /^\s*([^\n]+)\n(={3,25}|-{3,25})/;
  * Extract a markdown title from a proposal body that uses the `# Title` format
  * Returns null if no title found.
  */
- const extractHashTitle = (body: string) => body.match(hashRegex);
- /**
-  * Extract a markdown title from a proposal body that uses the `Title\n===` format.
-  * Returns null if no title found.
-  */
- const extractEqualTitle = (body: string) => body.match(equalTitleRegex);
- 
- /**
-  * Extract title from a proposal's body/description. Returns null if no title found in the first line.
-  * @param body proposal body
-  */
- const extractTitle = (body: string | undefined): string | null => {
-   if (!body) return null;
-   const hashResult = extractHashTitle(body);
-   const equalResult = extractEqualTitle(body);
-   return hashResult ? hashResult[1] : equalResult ? equalResult[1] : null;
- };
- 
- const removeBold = (text: string | null): string | null =>
-   text ? text.replace(/\*\*/g, '') : text;
- const removeItalics = (text: string | null): string | null =>
-   text ? text.replace(/__/g, '') : text;
- 
- const removeMarkdownStyle = R.compose(removeBold, removeItalics);
+const extractHashTitle = (body: string) => body.match(hashRegex);
+/**
+ * Extract a markdown title from a proposal body that uses the `Title\n===` format.
+ * Returns null if no title found.
+ */
+const extractEqualTitle = (body: string) => body.match(equalTitleRegex);
+
+/**
+ * Extract title from a proposal's body/description. Returns null if no title found in the first line.
+ * @param body proposal body
+ */
+const extractTitle = (body: string | undefined): string | null => {
+  if (!body) return null;
+  const hashResult = extractHashTitle(body);
+  const equalResult = extractEqualTitle(body);
+  return hashResult ? hashResult[1] : equalResult ? equalResult[1] : null;
+};
+
+const removeBold = (text: string | null): string | null =>
+  text ? text.replace(/\*\*/g, '') : text;
+const removeItalics = (text: string | null): string | null =>
+  text ? text.replace(/__/g, '') : text;
+
+const removeMarkdownStyle = R.compose(removeBold, removeItalics);
 
 export const useHasVotedOnProposal = (proposalId: string | undefined): boolean => {
   const { account } = useEthers();
@@ -450,6 +451,62 @@ export const useAllProposals = (): ProposalData => {
 export const useProposal = (id: string | number): Proposal | undefined => {
   const { data } = useAllProposals();
   return data?.find(p => p.id === id.toString());
+};
+
+export const useSnapshotProposal = (id: string): SnapshotProposal => {
+  const {
+    loading: snapshotProposalLoading,
+    error: snapshotProposalError,
+    data: snapshotProposalData,
+  } = useQuery(snapshotProposalsQuery(), {
+    context: { clientName: 'NounsDAOSnapshot' },
+  });
+
+  const proposals = snapshotProposalData?.proposals.map((v: any, i: any) => ({
+    ...v,
+    proposalNo: i + 1,
+  }));
+
+  const snapshotProposal = proposals?.find((proposal: SnapshotProposal) => proposal.id === id);
+
+  return snapshotProposal;
+};
+
+export const snapshotProposalToProposal = (
+  snapshotProposal?: SnapshotProposal,
+): Proposal | undefined => {
+  if (!snapshotProposal) return undefined;
+
+  const status: ProposalState = {
+    active: ProposalState.ACTIVE,
+    pending: ProposalState.PENDING,
+    closed: ProposalState.EXPIRED,
+  }[snapshotProposal.state];
+
+  return {
+    id: snapshotProposal.proposalNo.toString(),
+    title: snapshotProposal.title,
+    description: snapshotProposal.body,
+    status: status,
+    forCount: snapshotProposal.scores[0],
+    againstCount: snapshotProposal.scores[1],
+    abstainCount: snapshotProposal.scores[2],
+    createdBlock: parseInt(snapshotProposal.snapshot),
+    startBlock: snapshotProposal.start,
+    endBlock: snapshotProposal.end,
+    eta: undefined,
+    proposer: snapshotProposal.author,
+    proposalThreshold: 0, // TODO
+    quorumVotes: 1, // TODO
+    details: [],
+    transactionHash: '',
+    snapshotEnd: snapshotProposal.end,
+    snapshotProposalId: snapshotProposal.id,
+
+    snapshotForCount: snapshotProposal.scores[0],
+    snapshotAgainstCount: snapshotProposal.scores[1],
+    snapshotAbstainCount: snapshotProposal.scores[2],
+  };
 };
 
 export const useCastVote = () => {

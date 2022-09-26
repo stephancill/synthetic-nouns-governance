@@ -48,45 +48,50 @@ const ProposalContent: React.FC<ProposalContentProps> = props => {
           )}
         </Col>
       </Row>
-      <Row>
-        <Col className={classes.section}>
-          <h5>Proposed Transactions</h5>
-          <ol>
-            {proposal?.details?.map((d, i) => {
-              return (
-                <li key={i} className="m-0">
-                  {linkIfAddress(d.target)}.{d.functionSig}
-                  {d.value}(
-                  <br />
-                  {d.callData.split(',').map((content, i) => {
-                    return (
-                      <Fragment key={i}>
-                        <span key={i}>
-                          &emsp;
-                          {linkIfAddress(content)}
-                          {d.callData.split(',').length - 1 === i ? '' : ','}
-                        </span>
-                        <br />
-                      </Fragment>
-                    );
-                  })}
-                  )
-                </li>
-              );
-            })}
-          </ol>
-        </Col>
-      </Row>
-      <Row>
-        <Col className={classes.section}>
-          <h5>Proposer</h5>
-          {proposal?.proposer && proposal?.transactionHash && (
-            <>
-              {linkIfAddress(proposal.proposer)} at {transactionLink(proposal.transactionHash)}
-            </>
-          )}
-        </Col>
-      </Row>
+      {proposal && proposal.details.length > 0 && (
+        <>
+          <Row>
+            <Col className={classes.section}>
+              <h5>Proposed Transactions</h5>
+              <ol>
+                {proposal?.details?.map((d, i) => {
+                  return (
+                    <li key={i} className="m-0">
+                      {linkIfAddress(d.target)}.{d.functionSig}
+                      {d.value}(
+                      <br />
+                      {d.callData.split(',').map((content, i) => {
+                        return (
+                          <Fragment key={i}>
+                            <span key={i}>
+                              &emsp;
+                              {linkIfAddress(content)}
+                              {d.callData.split(',').length - 1 === i ? '' : ','}
+                            </span>
+                            <br />
+                          </Fragment>
+                        );
+                      })}
+                      )
+                    </li>
+                  );
+                })}
+              </ol>
+            </Col>
+          </Row>
+
+          <Row>
+            <Col className={classes.section}>
+              <h5>Proposer</h5>
+              {proposal?.proposer && proposal?.transactionHash && (
+                <>
+                  {linkIfAddress(proposal.proposer)} at {transactionLink(proposal.transactionHash)}
+                </>
+              )}
+            </Col>
+          </Row>
+        </>
+      )}
     </>
   );
 };

@@ -1,10 +1,13 @@
 import { Row, Col, Button, Card, Spinner } from 'react-bootstrap';
 import Section from '../../layout/Section';
 import {
+  Proposal,
   ProposalState,
+  snapshotProposalToProposal,
   useExecuteProposal,
   useProposal,
   useQueueProposal,
+  useSnapshotProposal,
 } from '../../wrappers/nounsDao';
 import { useUserVotesAsOfBlock } from '../../wrappers/nounToken';
 import classes from './Vote.module.css';
@@ -42,7 +45,9 @@ const VotePage = ({
     params: { id },
   },
 }: RouteComponentProps<{ id: string }>) => {
-  const proposal = useProposal(id);
+  const snapshotProposal = useSnapshotProposal(id);
+
+  const proposal = snapshotProposalToProposal(snapshotProposal);
 
   const [showVoteModal, setShowVoteModal] = useState<boolean>(false);
 
@@ -192,7 +197,7 @@ const VotePage = ({
     loading: votesLoading,
     error: votesError,
     data: voters,
-  } = useQuery<ProposalVotes>(proposalVotesQuery(proposal?.id ?? '0'));
+  } = useQuery<ProposalVotes>(proposalVotesQuery(proposal?.id ?? '0')); // TODO: Get synthetic nouns by voter address from snapshot function
 
   const voterIds = voters?.votes?.map(v => v.voter.id);
   const {
@@ -282,26 +287,28 @@ const VotePage = ({
           </Row>
         )}
         <Row>
+          {/* TODO: Use snapshot view? */}
           <VoteCard
             proposal={proposal}
             percentage={forPercentage}
-            nounIds={forNouns}
-            variant={VoteCardVariant.FOR} 
-            lilnounIds={[]}          
-            />
+            // nounIds={forNouns}
+            variant={VoteCardVariant.FOR}
+            lilnounIds={[]}
+          />
           <VoteCard
             proposal={proposal}
             percentage={againstPercentage}
-            nounIds={againstNouns}
-            variant={VoteCardVariant.AGAINST} 
-            lilnounIds={[]}        
-            />
+            // nounIds={againstNouns}
+            variant={VoteCardVariant.AGAINST}
+            lilnounIds={[]}
+          />
           <VoteCard
             proposal={proposal}
+            snapshotView={true}
             percentage={abstainPercentage}
-            nounIds={abstainNouns}
+            // nounIds={abstainNouns}
             variant={VoteCardVariant.ABSTAIN}
-            lilnounIds={[]}        
+            lilnounIds={[]}
           />
         </Row>
 

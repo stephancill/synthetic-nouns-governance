@@ -1,6 +1,11 @@
 import { Button, Col, Row, Spinner } from 'react-bootstrap';
 import Section from '../../layout/Section';
-import { Proposal, useAllProposals, useProposalThreshold } from '../../wrappers/nounsDao';
+import {
+  Proposal,
+  snapshotProposalToProposal,
+  useAllProposals,
+  useProposalThreshold,
+} from '../../wrappers/nounsDao';
 import { useAllBigNounProposals } from '../../wrappers/bigNounsDao';
 import Proposals, { SnapshotProposal } from '../../components/Proposals';
 import classes from './Governance.module.css';
@@ -16,14 +21,13 @@ import { snapshotProposalsQuery, nounsInTreasuryQuery } from '../../wrappers/sub
 import { useQuery } from '@apollo/client';
 import Link from '../../components/Link';
 import { RouteComponentProps } from 'react-router-dom';
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom';
 
 const GovernancePage = ({
   match: {
-    params: { id }
+    params: { id },
   },
 }: RouteComponentProps<{ id: string }>) => {
-  const { data: proposals, loading: loadingProposals } = useAllProposals();
   const { data: bigNounProposals, loading: loadingBigNounProposals } = useAllBigNounProposals();
 
   const {
@@ -44,10 +48,16 @@ const GovernancePage = ({
 
   const threshold = useProposalThreshold();
   const nounsRequired = threshold !== undefined ? threshold + 1 : '...';
-  const nounThresholdCopy = `${nounsRequired} ${threshold === 0 ? 'Lil Noun' : 'Lil Nouns'}`;
+  const nounThresholdCopy = `${nounsRequired} ${
+    threshold === 0 ? 'Synthetic Noun' : 'Synthetic Nouns'
+  }`;
 
   const [isNounsDAOProp, setisNounsDAOProp] = useState(false);
-  const [snapshotProposals, setSnapshotProposals] = useState(undefined);
+  const [snapshotProposals, setSnapshotProposals] = useState<SnapshotProposal[] | null>(null);
+
+  const proposals = snapshotProposals
+    ? snapshotProposals.map(sp => snapshotProposalToProposal(sp)!)
+    : undefined;
 
   const treasuryBalance = useTreasuryBalance();
   const treasuryBalanceUSD = useTreasuryUSDValue();
@@ -71,24 +81,32 @@ const GovernancePage = ({
   const location = useLocation();
 
   useEffect(() => {
-    if(!location.pathname) return;
+    if (!location.pathname) return;
 
     if (location.pathname == '/vote/nounsdao') {
       setNounsDAOProps();
     }
   }, []);
 
+  useEffect(() => {
+    if (snapshotProposalData) {
+      setSnapshotProposals(
+        snapshotProposalData.proposals.map((v: any, i: any) => ({
+          ...v,
+          proposalNo: i + 1,
+        })),
+      );
+    } else {
+      setSnapshotProposals(null);
+    }
+  }, [snapshotProposalData]);
+
   const nounsDaoLink = <Link text="Nouns DAO" url="https://nouns.wtf" leavesPage={true} />;
   const snapshotLink = (
-    <Link text="Snapshot" url="https://snapshot.org/#/leagueoflils.eth" leavesPage={true} />
+    <Link text="Snapshot" url="https://snapshot.org/#/mrtn.eth" leavesPage={true} />
   );
 
-  if (
-    nounsInTreasuryLoading ||
-    snapshotProposalLoading ||
-    loadingBigNounProposals ||
-    loadingProposals
-  ) {
+  if (nounsInTreasuryLoading || snapshotProposalLoading || loadingBigNounProposals) {
     return (
       <div className={classes.spinner}>
         <Spinner animation="border" />
@@ -102,7 +120,7 @@ const GovernancePage = ({
         <Row className={classes.headerRow}>
           <span>Governance</span>
           <div className={classes.headerWrapper}>
-            <h1>{!isNounsDAOProp ? 'Lil Nouns DAO' : 'Nouns DAO'}</h1>
+            <h1>{!isNounsDAOProp ? 'Plebeian Assembly' : 'Nouns DAO'}</h1>
             <div className="btn-toolbar" role="btn-toolbar" aria-label="Basic example">
               <Button
                 key={1}
@@ -114,7 +132,7 @@ const GovernancePage = ({
                 id={'1'}
                 onClick={e => setLilNounsDAOProps()}
               >
-                Lil Nouns DAO
+                Pleb DAO
               </Button>
               <Button
                 key={2}
@@ -135,19 +153,17 @@ const GovernancePage = ({
           <p className={classes.subheading}>
             {!isNounsDAOProp ? (
               <>
-                Lil Nouns govern <span className={classes.boldText}>Lil Nouns DAO</span>. Lil Nouns
-                can vote on proposals or delegate their vote to a third party. A minimum of{' '}
-                <span className={classes.boldText}>{nounThresholdCopy}</span> is required to submit
-                proposals. A minimum of <span className={classes.boldText}>{'1 Lil Noun'}</span> is
-                required to vote.
+                Synthetic Nouns govern the{' '}
+                <span className={classes.boldText}>Plebeian Assembly</span>. A minimum of{' '}
+                <span className={classes.boldText}>{'1 Synthetic Noun'}</span> is required to vote.
               </>
             ) : (
               <>
-                Lil Nouns use Nouns collectivley purchased by the DAO to govern in{' '}
-                <span className={classes.boldText}>{nounsDaoLink}</span>. Lil Nouners can use their
-                lil nouns to vote on Nouns DAO proposals. Voting is free and is conducted via{' '}
+                Synthetic Nouns use Nouns collectively allocated to the DAO to govern in{' '}
+                <span className={classes.boldText}>{nounsDaoLink}</span>. Plebeians can use their
+                synthetic nouns to vote on Nouns DAO proposals. Voting is free and is conducted via{' '}
                 <span className={classes.boldText}>{snapshotLink}</span>. A minimum of{' '}
-                <span className={classes.boldText}>{'1 Lil Noun'}</span> is required to vote.
+                <span className={classes.boldText}>{'1 Synthetic Noun'}</span> is required to vote.
               </>
             )}
           </p>
@@ -205,15 +221,16 @@ const GovernancePage = ({
             <Col className={classes.treasuryInfoText}>
               {!isNounsDAOProp ? (
                 <>
-                  This treasury exists for <span className={classes.boldText}>Lil Nouns DAO</span>{' '}
-                  participants to allocate resources for the long-term growth and prosperity of the
-                  Lil Nouns project.
+                  This treasury exists for the{' '}
+                  <span className={classes.boldText}>Plebeian Assembly DAO</span> participants to
+                  allocate resources for the long-term growth and prosperity of the Plebeian
+                  Assembly project.
                 </>
               ) : (
                 <>
-                  The Nouns purchased by Lil Nouns exists for{' '}
-                  <span className={classes.boldText}>Lil Nouns DAO</span> participants to allocate
-                  resources for the long-term growth and prosperity of the Nouns project.
+                  The Nouns allocated to the Plebeian Assembly exists for{' '}
+                  <span className={classes.boldText}>Plebeian Assembly DAO</span> participants to
+                  allocate resources for the long-term growth and prosperity of the Nouns project.
                 </>
               )}
             </Col>
@@ -221,12 +238,9 @@ const GovernancePage = ({
         </>
 
         <Proposals
-          proposals={proposals}
+          proposals={proposals || []}
           nounsDAOProposals={bigNounProposals}
-          snapshotProposals={snapshotProposalData.proposals.map((v: any, i: any) => ({
-            ...v,
-            proposalNo: i + 1,
-          }))}
+          snapshotProposals={snapshotProposals}
           isNounsDAOProp={isNounsDAOProp}
         />
       </Col>

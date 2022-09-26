@@ -382,7 +382,7 @@ export const snapshotProposalsQuery = () => gql`
     proposals(
       first: 1000
       skip: 0
-      where: { space_in: ["League of Lils", "leagueoflils.eth"] }
+      where: { space_in: ["Nouns Plebeian Assembly", "mrtn.eth"] }
       orderBy: "created"
       orderDirection: desc
     ) {
@@ -478,6 +478,3 @@ export const clientFactory = (uri: string) =>
     uri,
     cache: new InMemoryCache(),
   });
-
-
- 

@@ -15,17 +15,16 @@ export enum VoteCardVariant {
 interface VoteCardProps {
   proposal: Proposal;
   percentage: number;
-  nounIds: Array<string>;
+  nounIds?: Array<string>;
   variant: VoteCardVariant;
   isNounsDAOProp?: boolean;
-  lilnounIds: Array<string>;
+  lilnounIds?: Array<string>;
   delegateView?: boolean;
   snapshotView?: boolean;
   snapshotVoteCount?: number;
   delegateGroupedVoteData?:
     | { delegate: string; supportDetailed: 0 | 1 | 2; nounsRepresented: string[] }[]
     | undefined;
-
 }
 
 const VoteCard: React.FC<VoteCardProps> = props => {
@@ -39,7 +38,7 @@ const VoteCard: React.FC<VoteCardProps> = props => {
     delegateGroupedVoteData,
     lilnounIds,
     snapshotView,
-    snapshotVoteCount
+    snapshotVoteCount,
   } = props;
   const isMobile = isMobileScreen();
 
@@ -81,7 +80,6 @@ const VoteCard: React.FC<VoteCardProps> = props => {
             <span className={`${classes.voteCardHeaderText} ${titleClass}`}>{titleCopy}</span>
             {!isMobile && (
               <span className={classes.voteCardVoteCount}>
-
                 {delegateView ? (
                   <>
                     {filteredDelegateGroupedVoteData.length === 1 ? (
@@ -96,7 +94,7 @@ const VoteCard: React.FC<VoteCardProps> = props => {
                   </>
                 ) : snapshotView ? (
                   <>
-                    {voteCount} 
+                    {voteCount}
                     {/* <span>Lil Nouns</span> */}
                   </>
                 ) : (
@@ -112,16 +110,15 @@ const VoteCard: React.FC<VoteCardProps> = props => {
           )}
 
           <VoteProgresBar variant={variant} percentage={snapshotView ? 0 : percentage} />
-          {!isMobile && (
+          {nounIds && !isMobile && (
             <Row className={classes.nounProfilePics}>
               {delegateView ? (
-                
                 <NounImageVoteTable
                   nounIds={nounIds}
                   propId={parseInt(proposal.id || '0')}
                   isNounsDAOProp={isNounsDAOProp}
                 />
-              ) : snapshotView ? (
+              ) : snapshotView && lilnounIds ? (
                 <NounImageVoteTable
                   nounIds={lilnounIds}
                   propId={parseInt(proposal.id || '0')}

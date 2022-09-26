@@ -22,7 +22,12 @@ dayjs.extend(timezone);
 dayjs.extend(advanced);
 dayjs.extend(relativeTime);
 
-const getCountdownCopy = (proposal: Proposal, currentBlock: number, propState?: ProposalState, snapshotProp?: SnapshotProposal) => {
+const getCountdownCopy = (
+  proposal: Proposal,
+  currentBlock: number,
+  propState?: ProposalState,
+  snapshotProp?: SnapshotProposal,
+) => {
   const AVERAGE_BLOCK_TIME_IN_SECS = 13;
   const timestamp = Date.now();
   const startDate =
@@ -45,16 +50,21 @@ const getCountdownCopy = (proposal: Proposal, currentBlock: number, propState?: 
 
   const now = dayjs();
 
-  const past = dayjs.unix(1659942900)
-  const nows = dayjs().unix()
-  const present = dayjs.unix(nows)
-  const mm = present.diff(past, 'days')
-  
-  if(snapshotProp && (propState == ProposalState.METAGOV_ACTIVE || propState == ProposalState.METAGOV_CLOSED)){
-    const snapshotPropEndDate = dayjs.unix(snapshotProp.end)
-    const snapshotPropStartDate = dayjs.unix(snapshotProp.start) 
+  const past = dayjs.unix(1659942900);
+  const nows = dayjs().unix();
+  const present = dayjs.unix(nows);
+  const mm = present.diff(past, 'days');
 
-    console.log(`getCountdownCopy: endDate: ${snapshotPropEndDate.fromNow()}. startDate: ${snapshotPropStartDate}`)
+  if (
+    snapshotProp &&
+    (propState == ProposalState.METAGOV_ACTIVE || propState == ProposalState.METAGOV_CLOSED)
+  ) {
+    const snapshotPropEndDate = dayjs.unix(snapshotProp.end);
+    const snapshotPropStartDate = dayjs.unix(snapshotProp.start);
+
+    console.log(
+      `getCountdownCopy: endDate: ${snapshotPropEndDate.fromNow()}. startDate: ${snapshotPropStartDate}`,
+    );
 
     if (snapshotPropStartDate?.isBefore(now) && snapshotPropEndDate?.isAfter(now)) {
       return `Lil Nouns Voting Ends ${snapshotPropEndDate.fromNow()}`;
@@ -63,7 +73,7 @@ const getCountdownCopy = (proposal: Proposal, currentBlock: number, propState?: 
       return `Nouns Voting Ends ${endDate?.fromNow()}`;
     }
     return `Lil Nouns Voting Starts ${snapshotPropStartDate.fromNow()}`;
-  } 
+  }
 
   if (startDate?.isBefore(now) && endDate?.isAfter(now)) {
     return `Ends ${endDate.fromNow()}`;
@@ -72,7 +82,6 @@ const getCountdownCopy = (proposal: Proposal, currentBlock: number, propState?: 
     return `Expires ${expiresDate.fromNow()}`;
   }
   return `Starts ${dayjs(startDate).fromNow()}`;
-  
 };
 
 export enum Vote_ {
@@ -106,8 +115,8 @@ export interface SnapshotProposal {
   author: string; //proposer
   proposalNo: number;
 
-  scores_total: number
-  scores: number[]
+  scores_total: number;
+  scores: number[];
 
   transactionHash: string;
   [key: string]: any;
@@ -231,7 +240,7 @@ const Proposals = ({
                 return (
                   <div
                     className={clsx(classes.proposalLink, classes.proposalLinkWithCountdown)}
-                    onClick={() => history.push(`/vote/${p.id}`)}
+                    onClick={() => history.push(`/vote/${p.snapshotProposalId}`)}
                     key={i}
                   >
                     <div className={classes.proposalInfoWrapper}>
@@ -289,18 +298,18 @@ const Proposals = ({
                 let propStatus = p.status;
 
                 if (snapshotVoteObject && !p.snapshotForCount) {
-                  p.snapshotProposalId = snapshotVoteObject.id
+                  p.snapshotProposalId = snapshotVoteObject.id;
 
-                  if(snapshotVoteObject.scores_total){
-                    const scores = snapshotVoteObject.scores
-                    p.snapshotForCount == scores[0]
-                    p.snapshotAgainstCount == scores[1]
-                    p.snapshotAbstainCount == scores[2]
+                  if (snapshotVoteObject.scores_total) {
+                    const scores = snapshotVoteObject.scores;
+                    p.snapshotForCount == scores[0];
+                    p.snapshotAgainstCount == scores[1];
+                    p.snapshotAbstainCount == scores[2];
                   }
-                  
+
                   switch (snapshotVoteObject.state) {
                     case 'active':
-                      p.snapshotEnd = snapshotVoteObject.end
+                      p.snapshotEnd = snapshotVoteObject.end;
                       propStatus = ProposalState.METAGOV_ACTIVE;
                       break;
 
@@ -317,13 +326,12 @@ const Proposals = ({
                       break;
 
                     default:
-
                       propStatus = p.status;
                       break;
                   }
                 } else if (!snapshotVoteObject) {
                   if (p.status == ProposalState.ACTIVE) {
-                    propStatus = ProposalState.METAGOV_PENDING
+                    propStatus = ProposalState.METAGOV_PENDING;
                   } else {
                     propStatus = p.status;
                   }
@@ -336,7 +344,7 @@ const Proposals = ({
                   propStatus === ProposalState.ACTIVE ||
                   propStatus === ProposalState.QUEUED;
 
-                  //if lil nouns vote is active, change countdown pill to reflect snapshot voting window
+                //if lil nouns vote is active, change countdown pill to reflect snapshot voting window
 
                 const countdownPill = (
                   <div className={classes.proposalStatusWrapper}>
@@ -348,7 +356,7 @@ const Proposals = ({
                           <ClockIcon height={16} width={16} />
                         </span>{' '}
                         <span className={classes.countdownPillText}>
-                        {getCountdownCopy(p, currentBlock || 0, propStatus, snapshotVoteObject)}
+                          {getCountdownCopy(p, currentBlock || 0, propStatus, snapshotVoteObject)}
                         </span>
                       </div>
                     </div>
